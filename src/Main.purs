@@ -4,8 +4,23 @@ import Prelude
 
 import Data.Symbol (SProxy(..))
 import Effect (Effect)
-import Effect.Console (log)
 import Prim.Symbol as Symbol
+
+symbolContains
+  :: forall pattern sym result
+   . Symbol.Contains pattern sym result
+  => SProxy pattern
+  -> SProxy sym
+  -> SProxy result
+symbolContains _ _ = SProxy
+
+-- inferred type:
+resultContains1 :: SProxy "true"
+resultContains1 = symbolContains (SProxy :: SProxy "b") (SProxy :: SProxy "abc")
+
+-- inferred type:
+resultContains2 :: SProxy "false"
+resultContains2 = symbolContains (SProxy :: SProxy "z") (SProxy :: SProxy "abc")
 
 breakOnSymbol
   :: forall breakOn sym first second
@@ -19,8 +34,8 @@ breakOnSymbol _ _ = { first: SProxy, second: SProxy }
 result1 :: { first :: SProxy "a" , second :: SProxy ",b"}
 result1 = breakOnSymbol (SProxy :: SProxy ",") (SProxy :: SProxy "a,b")
 
--- inferred type:
-result2 :: { first :: SProxy "ab" , second :: SProxy ""}
+-- inferred type, hopelessly broken as expected:
+result2 :: forall second first. Symbol.BreakOn "," "ab" first second => { first :: SProxy first , second :: SProxy second }
 result2 = breakOnSymbol (SProxy :: SProxy ",") (SProxy :: SProxy "ab")
 
 joinSymbol
@@ -45,5 +60,4 @@ resultC :: forall a. Symbol.BreakOn "," a "a," ",b" => SProxy a
 resultC = joinSymbol (SProxy :: SProxy ",") (SProxy :: SProxy "a,") (SProxy :: SProxy ",b")
 
 main :: Effect Unit
-main = do
-  log "Hello sailor!"
+main = pure unit
